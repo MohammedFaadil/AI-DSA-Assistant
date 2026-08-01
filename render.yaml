@@ -1,0 +1,116 @@
+# Render Blueprint — deploys the two Node/Python services on the free tier.
+#
+# Deploy: connect this repo in the Render dashboard and it discovers this file
+# automatically ("New +" → "Blueprint"), or run `render blueprint launch`.
+#
+# What this does NOT provision, on purpose:
+#   - Postgres — use Neon (neon.tech), which is what the architecture docs
+#     assume (docs/architecture/08-deployment-architecture.md). Render's own
+#     free Postgres expires after 90 days; Neon's free tier does not.
+#   - Redis — optional. Point REDIS_URL at Upstash if you want durable rate
+#     limits across restarts; the API runs correctly without it.
+#   - The AI service is listed here for convenience, but per ADR-004 it should
+#     live on Hugging Face Spaces (Docker SDK) instead, so it never competes
+#     with the API for Render's 750 free instance-hours/month. Delete the
+#     `ai` service below if you deploy it to HF Spaces — see apps/ai/Dockerfile
+#     and docs/architecture/08-deployment-architecture.md §2.
+
+services:
+  # ── API — Express + Socket.IO. Keep this one always-warm (docs 01 §2.2). ──
+  - type: web
+    name: ai-dsa-mentor-api
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: .
+    buildCommand: >
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @repo/db generate &&
+      pnpm --filter @repo/api build
+    startCommand: node apps/api/dist/server.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: APP_URL
+        sync: false # your Vercel URL, e.g. https://ai-dsa-mentor.vercel.app
+      - key: API_URL
+        sync: false # this service's own Render URL, once assigned
+      - key: CORS_ORIGINS
+        sync: false # same as APP_URL
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        sync: false # Neon pooled connection string
+      - key: DIRECT_DATABASE_URL
+        sync: false # Neon direct connection string (migrations)
+      - key: REDIS_URL
+        sync: false # optional — leave unset to run without Redis
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_TTL
+        value: 15m
+      - key: REFRESH_TOKEN_TTL_DAYS
+        value: 30
+      # mock is unsafe outside development (docs 08 §9) — Render will refuse to
+      # boot with EXECUTION_PROVIDER=mock in production, by design.
+      - key: EXECUTION_PROVIDER
+        value: judge0
+      - key: JUDGE0_URL
+        value: https://judge0-ce.p.rapidapi.com
+      - key: JUDGE0_API_KEY
+        sync: false
+      - key: JUDGE0_HOST
+        value: judge0-ce.p.rapidapi.com
+      - key: EXECUTION_DAILY_QUOTA
+        value: 200
+      - key: AI_SERVICE_URL
+        sync: false # the ai service's URL — Render service or HF Space
+      - key: AI_SERVICE_HMAC_SECRET
+        generateValue: true # MUST match the same var on the ai service exactly
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PER_USER_DAILY_TOKENS
+        value: 60000
+
+  # ── AI service — FastAPI + Tree-sitter + LangGraph. Prefer HF Spaces; this
+  #    entry is here so `render blueprint launch` works with zero edits if you
+  #    would rather keep both services on Render. ──────────────────────────
+  - type: web
+    name: ai-dsa-mentor-ai
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: apps/ai
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: AI_SERVICE_HMAC_SECRET
+        sync: false # MUST match the API's AI_SERVICE_HMAC_SECRET exactly
+      - key: REQUIRE_SIGNATURE
+        value: "true"
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ENABLE_OLLAMA
+        value: "false"
+      - key: AI_LOG_LEVEL
+        value: INFO
+      - key: DAILY_TOKEN_BUDGET
+        value: 2000000
+      - key: PER_USER_DAILY_TOKENS
+        value: 60000
+      - key: ENABLE_GHOST_TEXT
+        value: "true"

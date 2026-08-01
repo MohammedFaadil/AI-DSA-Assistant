@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* --font-sans and --font-mono are supplied by next/font in layout.tsx
+     (Manrope / JetBrains Mono), self-hosted at build time. */
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-ink-950 text-ink-100 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
+  }
+
+  ::selection {
+    @apply bg-accent/30 text-white;
+  }
+
+  /* Scrollbars are visible chrome in a three-pane IDE layout — the default
+     ones are far too loud against a dark editor. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full border-4 border-transparent bg-ink-600 bg-clip-padding;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-500;
+  }
+}
+
+@layer components {
+  /* Single consistent page wrapper — every top-level page uses this instead of
+     hand-rolling its own max-width, padding and breakpoint combination, so
+     margins, gutters and the point at which content reflows are identical
+     everywhere. */
+  .page-container {
+    @apply mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10;
+  }
+  .page-container-narrow {
+    @apply mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10;
+  }
+
+  .panel {
+    @apply rounded-xl border border-ink-700/70 bg-ink-850/80 shadow-panel backdrop-blur-xl;
+  }
+
+  .panel-flush {
+    @apply border border-ink-700/70 bg-ink-850/80 backdrop-blur-xl;
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-lg px-3.5 py-2
+           text-sm font-medium transition-all duration-150
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60
+           disabled:pointer-events-none disabled:opacity-45;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-soft active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply btn text-ink-200 hover:bg-ink-750 hover:text-ink-100;
+  }
+  .btn-outline {
+    @apply btn border border-ink-600 text-ink-200 hover:border-ink-500 hover:bg-ink-800;
+  }
+  .btn-success {
+    @apply btn bg-easy/90 text-ink-950 hover:bg-easy active:scale-[0.98];
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-ink-700 bg-ink-900/80 px-3.5 py-2.5 text-sm
+           text-ink-100 placeholder:text-ink-400
+           focus:border-accent/70 focus:outline-none focus:ring-2 focus:ring-accent/25;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-700 bg-ink-800/70
+           px-2.5 py-1 text-[11.5px] font-medium leading-none text-ink-300;
+  }
+
+  /* A slightly larger chip for primary filter/facet rows, where 11.5px reads
+     as genuinely small rather than "compact". */
+  .chip-lg {
+    @apply chip px-3 py-1.5 text-xs;
+  }
+
+  .card-title {
+    @apply text-[0.95rem] font-semibold leading-snug tracking-tight text-ink-100;
+  }
+  .card-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-ink-500;
+  }
+  .card-meta {
+    @apply text-[12.5px] leading-relaxed text-ink-400;
+  }
+
+  .link {
+    @apply text-accent-soft underline-offset-4 transition-colors hover:text-accent hover:underline;
+  }
+
+  .panel-interactive {
+    @apply panel transition-all duration-200 hover:-translate-y-0.5 hover:border-ink-600 hover:shadow-glow;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-accent-soft via-accent to-accent-soft bg-clip-text text-transparent;
+  }
+
+  .stat-value {
+    @apply font-mono tabular-nums;
+  }
+
+  .divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-ink-700 to-transparent;
+  }
+
+  .badge-tone-good {
+    @apply border-easy/30 bg-easy/10 text-easy;
+  }
+  .badge-tone-warn {
+    @apply border-medium/30 bg-medium/10 text-medium;
+  }
+  .badge-tone-bad {
+    @apply border-hard/30 bg-hard/10 text-hard;
+  }
+  .badge-tone-accent {
+    @apply border-accent/30 bg-accent/10 text-accent-soft;
+  }
+  .badge-tone-muted {
+    @apply border-ink-700 bg-ink-800/70 text-ink-400;
+  }
+
+  /* Strength meter — a horizontal track whose fill animates smoothly on every
+     score change so it reads as movement, not a snap. */
+  .meter-track {
+    @apply relative h-2 w-full overflow-hidden rounded-full bg-ink-800;
+  }
+  .meter-fill {
+    @apply h-full rounded-full transition-[width,background-color] duration-500 ease-out;
+  }
+
+  .glass {
+    @apply border border-white/10 bg-white/[0.03] backdrop-blur-2xl;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-ink-800;
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer
+           bg-gradient-to-r from-transparent via-white/5 to-transparent;
+    content: '';
+  }
+
+  /* Long-form problem statements and editorials. */
+  .prose-mentor {
+    @apply text-[0.9375rem] leading-relaxed text-ink-200;
+  }
+  .prose-mentor h1,
+  .prose-mentor h2,
+  .prose-mentor h3 {
+    @apply mb-2 mt-6 font-semibold text-ink-100;
+  }
+  .prose-mentor h3 {
+    @apply text-sm uppercase tracking-wide text-ink-300;
+  }
+  .prose-mentor p {
+    @apply mb-3;
+  }
+  .prose-mentor ul {
+    @apply mb-3 ml-5 list-disc space-y-1.5;
+  }
+  .prose-mentor ol {
+    @apply mb-3 ml-5 list-decimal space-y-1.5;
+  }
+  .prose-mentor code {
+    @apply rounded border border-ink-700 bg-ink-900 px-1.5 py-0.5 font-mono text-[0.85em] text-accent-soft;
+  }
+  .prose-mentor pre {
+    @apply mb-3 overflow-x-auto rounded-lg border border-ink-700 bg-ink-900 p-3.5;
+  }
+  .prose-mentor pre code {
+    @apply border-0 bg-transparent p-0 text-ink-200;
+  }
+  .prose-mentor strong {
+    @apply font-semibold text-ink-100;
+  }
+  .prose-mentor a {
+    @apply link;
+  }
+}
+
+/* Monaco inline suggestion (ghost text) — dimmed so it reads as a proposal,
+   never as code the learner already wrote. */
+.monaco-editor .ghost-text-decoration,
+.monaco-editor .suggest-preview-text {
+  @apply italic text-ink-400 !important;
+}

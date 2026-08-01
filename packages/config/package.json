@@ -1,0 +1,10 @@
+{
+  "name": "@repo/config",
+  "version": "0.1.0",
+  "private": true,
+  "files": ["tsconfig"],
+  "scripts": {
+    "lint": "echo 'no lint'",
+    "typecheck": "echo 'no typecheck'"
+  }
+}

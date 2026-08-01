@@ -1,0 +1,13 @@
+{
+  "extends": "@repo/config/tsconfig/node.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    // This is an application, not a library. Emitting declarations would force
+    // every exported Express router to name types from a pnpm-hoisted path.
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,0 +1,42 @@
+[project]
+name = "ai-dsa-mentor-ai"
+version = "0.1.0"
+description = "Signal engine and multi-agent mentor for AI DSA Mentor"
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "httpx>=0.28.0",
+    "structlog>=24.4.0",
+    # Tree-sitter is the primary parser. The service degrades to a regex
+    # analyser if the grammars are unavailable, so these are effectively
+    # optional at runtime — see app/analysis/parser.py.
+    "tree-sitter>=0.23.0",
+    "tree-sitter-language-pack>=0.4.0",
+    # LangGraph drives the Stage-2 agent graph. Also optional: without it the
+    # service falls back to a linear single-agent path.
+    "langgraph>=0.2.60",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.25.0",
+    "ruff>=0.8.0",
+    "mypy>=1.14.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

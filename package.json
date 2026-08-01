@@ -1,0 +1,47 @@
+{
+  "name": "ai-dsa-mentor",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "go": "node infra/scripts/dev.mjs",
+    "setup": "node infra/scripts/dev.mjs",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "infra:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "db:local": "node infra/scripts/dev-db.mjs start",
+    "db:local:init": "node infra/scripts/dev-db.mjs init",
+    "db:local:recreate": "node infra/scripts/dev-db.mjs recreate",
+    "db:push": "pnpm --filter @repo/db exec prisma db push",
+    "smoke": "node infra/scripts/smoke.mjs",
+    "db:generate": "pnpm --filter @repo/db generate",
+    "db:migrate": "pnpm --filter @repo/db migrate:dev",
+    "db:deploy": "pnpm --filter @repo/db migrate:deploy",
+    "db:seed": "pnpm --filter @repo/db seed",
+    "db:studio": "pnpm --filter @repo/db studio",
+    "db:reset": "pnpm --filter @repo/db reset",
+    "ai:install": "pip install -e apps/ai[dev]",
+    "ai:dev": "uvicorn app.main:app --reload --port 8000 --app-dir apps/ai",
+    "ai:start": "uvicorn app.main:app --port 8000 --app-dir apps/ai",
+    "ai:test": "pytest apps/ai/tests -q"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "dotenv": "^16.6.1",
+    "embedded-postgres": "18.4.0-beta.17",
+    "pg": "^8.22.0",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

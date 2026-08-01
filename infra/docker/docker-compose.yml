@@ -1,0 +1,95 @@
+name: ai-dsa-mentor
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: adm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: aidsamentor
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: adm-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+
+  # ── Judge0 (optional locally) ──────────────────────────────────────────
+  #
+  # Judge0 requires PRIVILEGED containers because `isolate` needs cgroups.
+  # That is precisely why it cannot be self-hosted on Render, Vercel or HF
+  # Spaces — none of them allow privileged mode. In production we use hosted
+  # Judge0 until a dedicated VM is justified (docs 01 §11, 08 §4).
+  #
+  # Start it with:  docker compose --profile judge up -d
+  # Or skip it entirely and use EXECUTION_PROVIDER=mock, which runs Python and
+  # JavaScript locally with no quota and no keys.
+  judge0-server:
+    image: judge0/judge0:1.13.1
+    container_name: adm-judge0
+    profiles: ['judge']
+    privileged: true
+    restart: unless-stopped
+    ports:
+      - '2358:2358'
+    environment:
+      REDIS_HOST: judge0-redis
+      POSTGRES_HOST: judge0-db
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0
+    depends_on:
+      - judge0-db
+      - judge0-redis
+
+  judge0-workers:
+    image: judge0/judge0:1.13.1
+    container_name: adm-judge0-workers
+    profiles: ['judge']
+    command: ['./scripts/workers']
+    privileged: true
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: judge0-redis
+      POSTGRES_HOST: judge0-db
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0
+    depends_on:
+      - judge0-db
+      - judge0-redis
+
+  judge0-db:
+    image: postgres:13-alpine
+    profiles: ['judge']
+    environment:
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0
+    volumes:
+      - judge0-db:/var/lib/postgresql/data
+
+  judge0-redis:
+    image: redis:7-alpine
+    profiles: ['judge']
+    command: redis-server --appendonly no
+
+volumes:
+  postgres-data:
+  redis-data:
+  judge0-db:

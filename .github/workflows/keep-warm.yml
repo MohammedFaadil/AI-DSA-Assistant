@@ -1,0 +1,29 @@
+name: Keep API warm
+
+# Render's free tier sleeps a service after ~15 minutes of inactivity and
+# grants 750 instance-hours/month against a ~730-hour month. That budget covers
+# exactly ONE always-on service, so the API gets the ping and the AI service is
+# warmed on demand when a learner opens a workspace instead (ADR-004).
+#
+# /healthz makes no database call — it must stay cheap enough that 4,300 pings
+# a month cost nothing.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API health
+        run: |
+          if [ -z "${{ secrets.API_HEALTH_URL }}" ]; then
+            echo "API_HEALTH_URL secret is not set; skipping."
+            exit 0
+          fi
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "${{ secrets.API_HEALTH_URL }}")
+          echo "status: $code"
+          # A cold start returns slowly but should still return 200 eventually.
+          if [ "$code" != "200" ]; then exit 1; fi
